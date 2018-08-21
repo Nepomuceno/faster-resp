@@ -56,7 +56,12 @@ namespace FasterResp
 
         private byte[] GetResponse(RespObject content)
         {
-            if(content.Type == )
+            if(content.Type == RespType.Str)
+            {
+                return Encoding.ASCII.GetBytes("+PONG\r\n");
+            } else {
+                return Encoding.ASCII.GetBytes("+OK\r\n");
+            }
         }
 
         private RespObject GetContent(StreamReader sr)

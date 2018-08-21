@@ -13,9 +13,10 @@ namespace FasterResp.Commands
                 RespObject[] value = input.Value as RespObject[];
                 if(value != null)
                 {
-                    
+                    content = value[1].Value as string;
                 }
             }
+            return _format.GetResponse(content);
         }
     }
 }
