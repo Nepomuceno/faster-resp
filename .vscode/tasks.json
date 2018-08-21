@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/faster-resp.csproj"
+                "${workspaceFolder}/FasterResp.csproj"
             ],
             "problemMatcher": "$msCompile"
         }

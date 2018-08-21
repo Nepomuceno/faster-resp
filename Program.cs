@@ -6,16 +6,59 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Connections;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Logging;
 
-namespace faster_resp
+namespace FasterResp
 {
 
-    class Program
+    class Startup
     {
+
+        private static readonly byte[] _helloWorldBytes = Encoding.UTF8.GetBytes("+OK\r\n");
+
+        public void Configure(IApplicationBuilder app)
+        {
+            app.Run((httpContext) =>
+            {
+                var response = httpContext.Response;
+                response.StatusCode = 200;
+                response.ContentType = "text/plain";
+
+                var helloWorld = _helloWorldBytes;
+                response.ContentLength = helloWorld.Length;
+                return response.Body.WriteAsync(helloWorld, 0, helloWorld.Length);
+            });
+        }
+
+        public async static Task Main(string[] args)
+        {
+            var host = new WebHostBuilder()
+                .ConfigureLogging((hostingEnvironment, logging) => {
+                    logging.AddDebug();
+                    logging.AddConsole();
+                })
+                .UseKestrel(options =>
+                {
+                    options.Listen(IPAddress.Loopback, 6379, connectionBuilder  => {
+                        connectionBuilder.UseConnectionLogging();
+                        connectionBuilder.UseConnectionHandler<RespHandler>();
+                    });
+                })
+                .UseContentRoot(Directory.GetCurrentDirectory())
+                .UseStartup<Startup>()
+                .Build();
+
+            await host.RunAsync();
+        }
+        /*         
         const byte CR = 13;
         const byte LF = 10;
         static void Main(string[] args)
         {
+            CreateWebHostBuilder(args).Build().Run();
             IPAddress address = IPAddress.Parse("127.0.0.1");
             TcpListener listener = new TcpListener(address, 6379);
             listener.Start();
@@ -24,6 +67,19 @@ namespace faster_resp
                 var client = listener.AcceptTcpClient();
                 Task.Run(() => RespListener(client));
             }
+        }
+
+        public static IWebHostBuilder CreateWebHostBuilder(string[] args) {
+    WebHost.CreateDefaultBuilder(args)
+        .UseStartup<Startup>()
+        .UseKestrel(options =>
+        {
+            options.Listen(IPAddress.Loopback, 8000);
+            options.Listen(IPAddress.Loopback, 8001, listenOptions =>
+            {
+                listenOptions.UseHttps("testCert.pfx", "testPassword");
+            });
+        });
         }
         private static void RespListener(TcpClient client)
         {
@@ -82,25 +138,7 @@ namespace faster_resp
         }
 
 
-        private static string readline(NetworkStream st)
-        {
-            List<byte> content = new List<byte>();
-            byte a;
-            do
-            {
-                a = (byte)st.ReadByte();
-                if (a != 10 && a != 13)
-                {
-                    content.Add(a);
-                }
-            }
-            while (a != 10 && a != 13);
-            if (st.DataAvailable && a == 10)
-            {
-                st.ReadByte();
-            }
-            return Encoding.UTF8.GetString(content.ToArray());
-        }
+        
         private static object[] ReadArray(Span<byte> content, int start, out int position)
         {
             start++;
@@ -161,5 +199,6 @@ namespace faster_resp
             position = start + length + 2;
             return result;
         }
+        */
     }
 }
